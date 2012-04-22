@@ -30,7 +30,7 @@
     
     <string name="controlPanel" formatted="false">  :)  :(  ;)  :))  :)))  :-\\  :???:  :no:  :up:  :down:  :super:  :shuffle:  :wow:  :crash:  :user:  :maniac:  :xz:  :beer:  </string>
     <string name="youWrote">Hello %s, you wrote:</string>
-    <string name="tagline" formatted="false">... Sent with [b][url=http://http://code.google.com/p/anusai-android/]%s[/url][/b]</string>
+    <string name="tagline" formatted="false">... Sent with [b][url=http://code.google.com/p/anusai-android/]%s[/url][/b]</string>
     
     
 </resources>

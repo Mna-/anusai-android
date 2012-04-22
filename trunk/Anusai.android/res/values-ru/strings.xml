@@ -27,6 +27,6 @@
         <u>П</u>
     </string>
     <string name="youWrote">Здравствуйте %s, Вы писали:</string>
-    <string name="tagline" formatted="false">... Отправлено с помощью [b][url=http://http://code.google.com/p/anusai-android/]%s[/url][/b]</string>
+    <string name="tagline" formatted="false">... Отправлено с помощью [b][url=http://code.google.com/p/anusai-android/]%s[/url][/b]</string>
    
 </resources>
