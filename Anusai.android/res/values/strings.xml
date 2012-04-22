@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+
+    <string name="hello">Preference and whores!</string>
+    <string name="app_name">Anusai.android 0.1</string>
+    <string name="forums">Forums</string>
+    <string name="chooseForums">Choose Forum</string>
+    <string name="messageList">Messages</string>
+    <string name="refreshData">Refresh</string>
+    <string name="forumNotSelected">Not selected</string>
+    <string name="dataUpdate">Checking new messages from RSDN</string>
+    <string name="topicItemFormat" formatted="false">Started by [b]%s[/b] %s at %s \nLast answered by [b]%s[/b] %s at %s</string>
+    <string name="notifyNewMessage">New message received</string>
+    <string name="messageHeaderFormat" formatted="false">Sent by [b]%s[/b] %s at %s</string>
+    <string name="userName">User Name</string>
+    <string name="password">Password</string>
+    <string name="saveBtn">Save</string>
+    <string name="credentials">Credentials</string>
+    <string name="credentialsLegend">Credentials information is needed by RSDN to identify users.</string>
+    <string name="about">About</string>
+    <string name="postReply">Reply</string>
+    <string name="bold">B</string>
+    <string name="italic">I</string>
+    <string name="strike">
+        <strike>ABC</strike>
+    </string>
+    <string name="underline">
+        <u>U</u>
+    </string>
+    
+    <string name="controlPanel" formatted="false">  :)  :(  ;)  :))  :)))  :-\\  :???:  :no:  :up:  :down:  :super:  :shuffle:  :wow:  :crash:  :user:  :maniac:  :xz:  :beer:  </string>
+    <string name="youWrote">Hello %s, you wrote:</string>
+    <string name="tagline" formatted="false">... Sent with [b][url=http://rsdn.ru/forum/janus/4701612.aspx]%s[/url][/b]</string>
+    
+    
+</resources>

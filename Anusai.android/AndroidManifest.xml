@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.agorikov.rsdnhome.app"
+    android:versionCode="1"
+    android:versionName="1.0" >
+
+    <uses-sdk android:minSdkVersion="7" />
+    <uses-permission android:name="android.permission.INTERNET"/>
+    <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE"/>
+
+    <application
+        android:icon="@drawable/rsdn"
+        android:label="@string/app_name" android:name="RSDNApplication">
+        <activity android:name="MessagesActivity" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+        <activity android:name="anusaiActivity" android:label="@string/app_name" />
+        <activity android:name="ForumsActivity" android:label="@string/chooseForums" />
+        <activity android:name="ForumChecksActivity" />
+        <activity android:label="@string/chooseForums" android:name="ForumSelectorActivity" />
+        <activity android:name="MessageViewActivity"></activity>
+        <service android:name="AnusaiService">
+        </service>
+        <receiver android:name="MessageRefreshActionReceiver">
+            <intent-filter>
+                <action android:name="com.agorikov.rsdnhome.ACTION_REFRESH_MESSAGES"/>
+            </intent-filter>
+        </receiver>
+        <activity android:name="CredentialsActivity" android:label="@string/userName"></activity>
+        <activity android:name="AboutActivity" android:label="@string/about"></activity>
+        <activity android:name="MessageComposeActivity" 
+            android:configChanges="orientation|keyboardHidden"
+            ></activity>
+   </application>
+
+</manifest>
