@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="format_bar_font_size">17dip</dimen>
+    <dimen name="format_bar_button_padding">4dip</dimen>
+    <dimen name="format_bar_button_width">35dip</dimen>
+    <dimen name="command_bar_height">40dip</dimen>
+</resources>

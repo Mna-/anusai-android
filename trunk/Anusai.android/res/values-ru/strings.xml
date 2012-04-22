@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="refreshData">Обновить</string>
+    <string name="forums">Форумы</string>
+    <string name="chooseForums">Выбор форума</string>
+    <string name="messageList">Темы</string>
+    <string name="app_name">КЫВТ.андроид 0.1</string>
+    <string name="hello">Блекджек и шлюхи</string>
+    <string name="forumNotSelected">Не выбран</string>
+    <string name="topicItemFormat" formatted="false">Начал [b]%s[/b] %s в %s\nПоследний ответ [b]%s[/b] %s в %s</string>
+    <string name="dataUpdate">Проверка новых сообщений с RSDN</string>
+    <string name="notifyNewMessage">Принято новое сообщение</string>
+    <string name="messageHeaderFormat" formatted="false">Написал [b]%s[/b] %s в %s</string>
+    <string name="userName">Логин</string>
+    <string name="password">Пароль</string>
+    <string name="saveBtn">Сохранить</string>
+    <string name="credentials">Идентификация</string>
+    <string name="credentialsLegend">Параметры идентификации нужны RSDN чтобы различать пользователей.</string>
+    <string name="about">О программе</string>
+    <string name="postReply">Ответить</string>
+    <string name="bold">Ж</string>
+    <string name="italic">К</string>
+    <string name="strike">
+        <strike>АБВ</strike>
+    </string>
+    <string name="underline">
+        <u>П</u>
+    </string>
+    <string name="youWrote">Здравствуйте %s, Вы писали:</string>
+    <string name="tagline" formatted="false">... Отправлено с помощью [b][url=http://rsdn.ru/forum/janus/4701612.aspx]%s[/url][/b]</string>
+   
+</resources>

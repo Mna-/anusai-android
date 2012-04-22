@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="fill_parent"
+    android:layout_height="fill_parent"
+    android:orientation="vertical" >
+
+    <TextView
+        android:id="@+id/textView1"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:text="@string/app_name"
+        android:textAppearance="?android:attr/textAppearanceMedium" />
+
+    <TextView
+        android:id="@+id/textView2"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="This program is written by Artem Gorikov (agorikov@gmail.com) as a pet project to effectively chat in RSDN forums. It is not finished yet and lacks many neccessary features. The program uses KSOAP library code as well as my own, db engine is H2. Disclaimer to all possible damage it could make to your sdcard and brain. КЫВТ.андроид needs plenty of space on your phone's internal /sdcard  (4-16Gb depending on your subscription)." />
+
+    <CheckBox
+        android:id="@+id/enableLogChk"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="Enable debug log" />
+
+</LinearLayout>
