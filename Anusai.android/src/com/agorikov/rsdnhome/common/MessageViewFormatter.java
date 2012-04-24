@@ -36,7 +36,7 @@ public final class MessageViewFormatter extends MessageParser {
 	
 	private final SpannableStringBuilder sb;
 	private final RadixTreeNode.SubstringMatcher<Integer> emoticonMatcher;
-	public static final Pattern replyPattern = Pattern.compile("^(\\S{1,}?)\\s{0,1}(>{1,})(?:.*?)$", Pattern.MULTILINE);
+	public static final Pattern replyPattern = Pattern.compile("^(\\S*?)\\s{0,1}(>{1,})(?:.*?)$", Pattern.MULTILINE);
 	private static final Pattern urlPattern = Pattern.compile("((https?|ftp|gopher|telnet|file):((//)|(\\\\))+[\\w\\d:#@%/;$()~_?\\+-=\\\\\\.&]*)",
 			Pattern.MULTILINE | Pattern.CASE_INSENSITIVE);
 	static int lineQuoteColor = 0xff338822;

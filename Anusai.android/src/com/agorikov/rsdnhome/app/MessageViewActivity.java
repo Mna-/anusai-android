@@ -41,6 +41,7 @@ public class MessageViewActivity extends Activity {
 
 	private static class MenuItemIds {
 		final static int postReply = Menu.FIRST;
+		final static int jumpToParent = Menu.FIRST + 1;
 	}	
 	
 	@Override
@@ -77,11 +78,9 @@ public class MessageViewActivity extends Activity {
 		backButton.setOnClickListener(new OnClickListener() {
 			@Override
 			public void onClick(final View v) {
-				if (message.getTopicId() != message.getId() && message.getParentId() != null)
-					activateMessage(message.getParentId());
-				else
-					activateMessages(message.getForumId());
-			}});
+				launchViewParent(message);
+			}
+		});
 
 		final ImageButton composeButton = (ImageButton) findViewById(R.id.composeButton);
 		composeButton.setOnClickListener(new OnClickListener() {
@@ -145,7 +144,13 @@ public class MessageViewActivity extends Activity {
 		i.putExtra("messageId", msgId);
 		startActivity(i);
 	}
-
+	
+	private void launchViewParent(final Message message) {
+		if (message.getTopicId() != message.getId() && message.getParentId() != null)
+			activateMessage(message.getParentId());
+		else
+			activateMessages(message.getForumId());
+	}
 	protected void activateMessages(final long forumId) {
 		Log.d(TAG, String.format("Clicked forum #%d", forumId));
 		final Intent i = new Intent(MessageViewActivity.this, MessagesActivity.class);
@@ -163,6 +168,7 @@ public class MessageViewActivity extends Activity {
 	public boolean onCreateOptionsMenu(final Menu menu) {
 		super.onCreateOptionsMenu(menu);
 		
+		menu.add(0, MenuItemIds.jumpToParent, Menu.NONE, R.string.jumpToParent).setIcon(R.drawable.ic_menu_back);
 		menu.add(0, MenuItemIds.postReply, Menu.NONE, R.string.postReply).setIcon(R.drawable.ic_menu_compose);
 		
 		return true;
@@ -174,6 +180,12 @@ public class MessageViewActivity extends Activity {
 		switch (item.getItemId()) {
 		case MenuItemIds.postReply: 
 			launchMessageCompose();
+			return true;
+		case MenuItemIds.jumpToParent:
+			final Message message = RSDNApplication.getInstance()
+				.getMessages().get(messageId);
+			if (message != null)
+				launchViewParent(message);
 			return true;
 		}
 		return false;
