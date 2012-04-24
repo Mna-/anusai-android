@@ -32,6 +32,7 @@
     <string name="youWrote">Hello %s, you wrote:</string>
     <string name="tagline" formatted="false">... Sent with [b][url=http://code.google.com/p/anusai-android/]%s[/url][/b]</string>
     <string name="compose">Compose</string>
+    <string name="jumpToParent">Up one level</string>
     
     
 </resources>

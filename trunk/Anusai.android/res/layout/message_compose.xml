@@ -101,7 +101,7 @@
         android:layout_height="fill_parent"
         android:gravity="fill_horizontal"
         
-        android:inputType="textCapSentences|textLongMessage"
+        android:inputType="textCapSentences|textLongMessage|textMultiLine"
         android:imeOptions="flagNoExtractUi"
         android:background="@android:drawable/editbox_background"
          >

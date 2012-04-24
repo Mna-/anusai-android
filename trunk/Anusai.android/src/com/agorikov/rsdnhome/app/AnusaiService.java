@@ -178,8 +178,7 @@ public class AnusaiService extends Service {
 			int numTries = 0;
 			while (numTries++ < 3) {
 				try {
-					ws.postChange.call(null);
-					ws.postChangeCommit.call(null);
+					postMessages(ws);
 					ws.getNewUsers.call(new EntityReceiver<UserEntity>() {
 						final LinkedList<User> accUsers = new LinkedList<User>();
 						@Override
@@ -218,6 +217,7 @@ public class AnusaiService extends Service {
 					};
 					ws.getNewData.call(messageRecv);
 					ws.getBrokenTopics.call(messageRecv);
+					postMessages(ws);
 					break;
 				} catch(final Exception e) {
 					Log.e(TAG, "Error inside of refreshMessages", e);
@@ -243,6 +243,11 @@ public class AnusaiService extends Service {
 					AnusaiService.this.stopSelf();
 				}});
 		}
+	}
+
+	private void postMessages(final RsdnWebService ws) {
+		ws.postChange.call(null);
+		ws.postChangeCommit.call(null);
 	}
 
 	private void broadcastNewDataNotification() {
