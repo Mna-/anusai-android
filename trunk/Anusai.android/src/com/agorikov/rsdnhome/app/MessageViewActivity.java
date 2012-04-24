@@ -6,15 +6,12 @@ import java.util.ArrayList;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
-import android.content.res.Resources;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
 import android.text.Spanned;
 import android.text.method.LinkMovementMethod;
 import android.text.style.StyleSpan;
-
-import com.agorikov.rsdnhome.common.util.Log;
 import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -32,8 +29,7 @@ import android.widget.TwoLineListItem;
 
 import com.agorikov.rsdnhome.common.Converters;
 import com.agorikov.rsdnhome.common.MessageViewFormatter;
-import com.agorikov.rsdnhome.model.ComposedMessage;
-import com.agorikov.rsdnhome.model.ComposedMessage.ComposedMessageBuilder;
+import com.agorikov.rsdnhome.common.util.Log;
 import com.agorikov.rsdnhome.model.Message;
 import com.agorikov.rsdnhome.model.Messages;
 
@@ -189,19 +185,8 @@ public class MessageViewActivity extends Activity {
 			if (resultCode == RESULT_OK) {
 				final String subj = data.getStringExtra("subj");
 				final String body = data.getStringExtra("messageBody");
-				Log.d(TAG, subj);
-				Log.d(TAG, body);
-				final RSDNApplication app = RSDNApplication.getInstance();
-				final Message message = app.getMessages().get(messageId);
-				final Resources r = getResources();
-				final String tagLine = "[tagline]" + String.format(r.getString(R.string.tagline), r.getString(R.string.app_name)) + "[/tagline]";
-				
-				final ComposedMessage msg = ComposedMessageBuilder.create()
-						.id(0).parentId(messageId).forumId(message.getForumId())
-						.subj(subj)
-						.body(body + tagLine)
-						.build();
-				app.getComposedMessages().putAll(msg);
+				RSDNApplication.getInstance().getComposedMessages().putAll(MessageComposeUtils
+						.composeMessage(subj, body, messageId, 0));
 				startService(new Intent(this, AnusaiService.class));
 			}
 		} else {

@@ -45,6 +45,7 @@ public final class MessagesActivity extends Activity {
 	static final String TAG = "MessagesActivity";
 	static final int PICK_FORUM = 0;
 	static final int SHOW_MESSAGE = 1;
+	static final int COMPOSE_MESSAGE = 2;
 	static final Handler handler = new Handler();
 	private AsyncTask<Void,Void,Void> messagesRefreshTask;
 	
@@ -55,6 +56,7 @@ public final class MessagesActivity extends Activity {
 		final static int forums = Menu.FIRST + 1;
 		final static int credentials = Menu.FIRST + 2;
 		final static int about = Menu.FIRST + 3;
+		final static int compose = Menu.FIRST + 4;
 	}
 	
 	
@@ -156,7 +158,8 @@ public final class MessagesActivity extends Activity {
 	
 	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-		if (requestCode == PICK_FORUM) {
+		switch (requestCode) {
+		case PICK_FORUM:
 			if (resultCode == RESULT_OK) {
 				final long forumId = data.getLongExtra("forumId", -1);
 				if (forumId >= 0 && forumId != this.forumId) {
@@ -165,11 +168,22 @@ public final class MessagesActivity extends Activity {
 					startActivity(i);
 				}
 			}
-		} else {
+			break;
+		case COMPOSE_MESSAGE:
+			if (resultCode == RESULT_OK) {
+				final String subj = data.getStringExtra("subj");
+				final String body = data.getStringExtra("messageBody");
+				RSDNApplication.getInstance().getComposedMessages().putAll(MessageComposeUtils
+						.composeMessage(subj, body, 0, forumId));
+				startService(new Intent(this, AnusaiService.class));
+			}
+			break;
+		default:
 			super.onActivityResult(requestCode, resultCode, data);
 		}
 	}
 	
+
 	private void setForumId(long forumId) {
 		if (forumId == -1 || this.forumId != forumId) {
 			final RSDNApplication app = RSDNApplication.getInstance();
@@ -279,6 +293,12 @@ public final class MessagesActivity extends Activity {
 		startActivity(i);
 	}
 
+	private void launchCompose() {
+		final Intent i = new Intent(this, MessageComposeActivity.class);
+		i.putExtra("forumId", forumId);
+		startActivityForResult(i, COMPOSE_MESSAGE);
+	}
+	
 	private void launchCredentials() {
 		final Intent i = new Intent(this, CredentialsActivity.class);
 		startActivity(i);
@@ -294,6 +314,7 @@ public final class MessagesActivity extends Activity {
 		super.onCreateOptionsMenu(menu);
 		
 		menu.add(0, MenuItemIds.refreshData, Menu.NONE, R.string.refreshData).setIcon(R.drawable.ic_menu_refresh);
+		menu.add(0, MenuItemIds.compose, Menu.NONE, R.string.compose).setIcon(R.drawable.ic_menu_compose);
 		menu.add(0, MenuItemIds.forums, Menu.NONE, R.string.forums).setIcon(R.drawable.ic_menu_archive);
 		menu.add(0, MenuItemIds.credentials, Menu.NONE, R.string.credentials).setIcon(R.drawable.ic_menu_login);
 		menu.add(0, MenuItemIds.about, Menu.NONE, R.string.about).setIcon(R.drawable.ic_menu_help);
@@ -341,6 +362,9 @@ public final class MessagesActivity extends Activity {
 			return true;
 		case MenuItemIds.about:
 			launchAbout();
+			return true;
+		case MenuItemIds.compose:
+			launchCompose();
 			return true;
 		default:;
 		}

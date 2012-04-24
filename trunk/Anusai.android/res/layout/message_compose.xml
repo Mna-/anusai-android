@@ -8,7 +8,11 @@
     <EditText
         android:id="@+id/subjectEdit"
         android:layout_width="fill_parent"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:inputType="textCapSentences|textEmailSubject"
+         >
+        <requestFocus />
+    </EditText>
 
     <LinearLayout
         android:id="@+id/tbWrap"
@@ -97,12 +101,10 @@
         android:layout_height="fill_parent"
         android:gravity="fill_horizontal"
         
-        android:autoText="true"
+        android:inputType="textCapSentences|textLongMessage"
         android:imeOptions="flagNoExtractUi"
         android:background="@android:drawable/editbox_background"
-        android:capitalize="sentences"
          >
-        <requestFocus />
     </com.agorikov.rsdnhome.common.MessageEditText>
 
 </LinearLayout>
