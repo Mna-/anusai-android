@@ -111,10 +111,10 @@ public final class ComposedMessages extends EntityController<ComposedMessage> {
 				.body(resultSet.getString(5));
 	}
 
-	public void deleteByIds(final List<Long> sentIds) {
-		if (!sentIds.isEmpty()) {
+	public void deleteByIds(final Long ...sentIds) {
+		if (sentIds.length != 0) {
 			try {
-				_deleteByIds.setObject(1, sentIds.toArray());
+				_deleteByIds.setObject(1, sentIds);
 				_deleteByIds.executeUpdate();
 			} catch (SQLException e) {
 				Log.e(TAG, "Error in deleteByIds", e);

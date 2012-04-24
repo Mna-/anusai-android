@@ -423,12 +423,24 @@ public final class RsdnWebService {
 			String currentElement;
 			int mode;
 			final List<Long> sentIds = new ArrayList<Long>();
+			String exceptionString;
+			String exceptionInfo;
+			long localMsgId;
 			
 			@Override
 			protected void characters(String characters) {
 				Log.d(TAG, characters);
 				if (mode == 2) {
-					sentIds.add(Long.parseLong(characters));
+					final long id = Long.parseLong(characters);
+					sentIds.add(id);
+				} else if (mode == 3) {
+					if ("exception".equals(currentElement)) {
+						exceptionString = characters;
+					} else if ("localMessageId".equals(currentElement)) {
+						localMsgId = Long.parseLong(characters);
+					} else if ("info".equals(currentElement)) {
+						exceptionInfo = characters;
+					}
 				}
 			}
 			@Override
@@ -441,7 +453,7 @@ public final class RsdnWebService {
 					stackFrames.push(cleanCommitted);
 				} else if (mode == 0 && "PostExceptionInfo".equals(currentElement)) { 
 					mode = 3;
-					stackFrames.push(cleanCommitted);
+					stackFrames.push(notifyError);
 				} else if (mode == 1 && "int".equals(currentElement)) {
 					mode = 2;
 				}
@@ -449,15 +461,25 @@ public final class RsdnWebService {
 			final Runnable cleanCommitted = new Runnable() {
 				@Override
 				public void run() {
-					composedMessages.deleteByIds(sentIds);
+					composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
 					sentIds.clear();
+					mode = 0;
+				}};
+				final Runnable notifyError = new Runnable() {
+				@Override
+				public void run() {
+					composedMessages.deleteByIds(localMsgId);
+					Log.e(TAG, Converters.nonNullStr(exceptionString) + " : " + Converters.nonNullStr(exceptionInfo));
+					exceptionString = null;
+					exceptionInfo = null;
+					localMsgId = 0;
 					mode = 0;
 				}};
 			
 				
 			@Override
 			protected void flush() {
-				composedMessages.deleteByIds(sentIds);
+				composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
 				sentIds.clear();
 			}
 			@Override
