@@ -10,7 +10,6 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedList;
@@ -252,15 +251,15 @@ public final class RsdnWebService {
 			int mode;
 			
 			@Override
-			protected void startElement(final String name, final Attributes attributes, final Deque<Runnable> stackFrames) {
+			protected void startElement(final String name, final Attributes attributes, final List<Runnable> stackFrames) {
 				this.currentElement = name;
 				if ("JanusForumInfo".equals(currentElement)) {
 					mode = 1;
-					stackFrames.push(buildForum);
+					stackFrames.add(0, buildForum);
 				}
 				else if ("JanusForumGroupInfo".equals(currentElement)) {
 					mode = 2;
-					stackFrames.push(buildForumGroup);
+					stackFrames.add(0, buildForumGroup);
 				}
 			}
 			@Override
@@ -386,7 +385,7 @@ public final class RsdnWebService {
 			}
 			@Override
 			protected void startElement(String name, Attributes attributes,
-					Deque<Runnable> stackFrames) {
+					List<Runnable> stackFrames) {
 			}
 			@Override
 			protected void flush() {
@@ -403,11 +402,13 @@ public final class RsdnWebService {
 				final SoapObject writtenMessages = new SoapObject("", "writedMessages");
 				postRequest.addSoapObject(writtenMessages);
 				
+				final List<Long> sentIds = new LinkedList<Long>();
 				for (final ComposedMessage msg : writtenMsgs) {
 					final SoapObject postMessageInfo = new SoapObject("", "PostMessageInfo");
 					writtenMessages.addSoapObject(postMessageInfo);
 
 					final long localMessageId = msg.getId();
+					sentIds.add(localMessageId);
 					postMessageInfo.addProperty("localMessageId", localMessageId);
 					postMessageInfo.addProperty("parentId", msg.getParentId() != null ? msg.getParentId() : 0);
 					postMessageInfo.addProperty("forumId", msg.getForumId());
@@ -416,6 +417,9 @@ public final class RsdnWebService {
 				}
 				
 				call(postRequest);
+				
+				// cleanup if no exception thrown
+				composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
 			}
 		};
 		//-----------------------------------------------------------
@@ -425,6 +429,7 @@ public final class RsdnWebService {
 			final List<Long> sentIds = new ArrayList<Long>();
 			String exceptionString;
 			String exceptionInfo;
+			@SuppressWarnings("unused")
 			long localMsgId;
 			
 			@Override
@@ -445,15 +450,15 @@ public final class RsdnWebService {
 			}
 			@Override
 			protected void startElement(String name, Attributes attributes,
-					Deque<Runnable> stackFrames) {
+					List<Runnable> stackFrames) {
 				Log.d(TAG, name);
 				this.currentElement = name;
 				if (mode == 0 && "commitedIds".equals(currentElement)) {
 					mode = 1;
-					stackFrames.push(cleanCommitted);
+					stackFrames.add(0, cleanCommitted);
 				} else if (mode == 0 && "PostExceptionInfo".equals(currentElement)) { 
 					mode = 3;
-					stackFrames.push(notifyError);
+					stackFrames.add(0, notifyError);
 				} else if (mode == 1 && "int".equals(currentElement)) {
 					mode = 2;
 				}
@@ -461,14 +466,15 @@ public final class RsdnWebService {
 			final Runnable cleanCommitted = new Runnable() {
 				@Override
 				public void run() {
-					composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
-					sentIds.clear();
+					// It should be already deleted right after successful send
+					//composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
+					//sentIds.clear();
 					mode = 0;
 				}};
 				final Runnable notifyError = new Runnable() {
 				@Override
 				public void run() {
-					composedMessages.deleteByIds(localMsgId);
+					//composedMessages.deleteByIds(localMsgId);
 					Log.e(TAG, Converters.nonNullStr(exceptionString) + " : " + Converters.nonNullStr(exceptionInfo));
 					exceptionString = null;
 					exceptionInfo = null;
@@ -543,11 +549,11 @@ public final class RsdnWebService {
 				currentElement = null;
 			}
 			@Override
-			protected void startElement(final String name, final Attributes attributes, final Deque<Runnable> stackFrames) {
+			protected void startElement(final String name, final Attributes attributes, final List<Runnable> stackFrames) {
 				this.currentElement = name;
 				if ("JanusUserInfo".equals(currentElement)) {
 					mode = 1;
-					stackFrames.push(buildUser);
+					stackFrames.add(0, buildUser);
 				}
 			}
 			@Override
@@ -617,11 +623,11 @@ public final class RsdnWebService {
 		}
 
 		@Override
-		protected void startElement(final String name, final Attributes attributes, final Deque<Runnable> stackFrames) {
+		protected void startElement(final String name, final Attributes attributes, final List<Runnable> stackFrames) {
 			currentElement = name;
 			if ("JanusMessageInfo".equals(currentElement)) {
 				mode = 1;
-				stackFrames.push(buildMessage);
+				stackFrames.add(0, buildMessage);
 			}
 		}
 		@Override
@@ -709,7 +715,7 @@ public final class RsdnWebService {
 		protected final Map<String, RowVersionProvider> responseNames = new HashMap<String, RowVersionProvider>(RowVersion.responseNames);
 		
 		private final DefaultHandler contentHandler = new DefaultHandler() {
-			final LinkedList<Runnable> stackFrames = new LinkedList<Runnable>();
+			final List<Runnable> stackFrames = new LinkedList<Runnable>();
 			RowVersionProvider ver;
 			boolean inActionNS;
 			
@@ -728,7 +734,7 @@ public final class RsdnWebService {
 			@Override
 			public void startElement(final String uri, final String localName, final String qName,
 					final org.xml.sax.Attributes attributes) throws SAXException { 
-				stackFrames.push(null);
+				stackFrames.add(0, null);
 				if (!inActionNS) {
 					if (SOAP_ACTION_NS.equals(uri))
 						inActionNS = true;
@@ -758,7 +764,7 @@ public final class RsdnWebService {
 			public void endElement(String uri, String localName, String qName)
 					throws SAXException {
 				while (!stackFrames.isEmpty()) {
-					final Runnable frame = stackFrames.pop();
+					final Runnable frame = !stackFrames.isEmpty() ? stackFrames.remove(0) : null;
 					if (frame == null)
 						break;
 					frame.run();
@@ -775,7 +781,7 @@ public final class RsdnWebService {
 
 		protected abstract void characters(final String characters) ;
 
-		protected abstract void startElement(String name, Attributes attributes, Deque<Runnable> stackFrames);
+		protected abstract void startElement(String name, Attributes attributes, List<Runnable> stackFrames);
 
 		protected abstract void flush();
 
