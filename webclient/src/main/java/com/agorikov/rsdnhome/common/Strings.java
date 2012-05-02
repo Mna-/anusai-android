@@ -2,8 +2,6 @@ package com.agorikov.rsdnhome.common;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 public class Strings {
 	
@@ -48,34 +46,24 @@ public class Strings {
 		return sb.toString();
 	}
 
-	public static String splitCamelCase(final String s) {
-	   return s.replaceAll(
-	      String.format("%s|%s|%s",
-	         "(?<=[A-ZА-Я])(?=[A-ZА-Я][a-zа-я])",
-	         "(?<=[^A-ZА-Я])(?=[A-ZА-Я])",
-	         "(?<=[A-Za-zА-яа-я])(?=[^A-Za-zА-Яа-я])"
-	      ), " ");
-	}
-	private static final Pattern firstWPat = Pattern.compile("\\w");
-	
-	public static String initials(final String s) {
-		final StringBuilder sb = new StringBuilder();
-		final String splitCamelCase = splitCamelCase(s);
-		for (final String word : splitCamelCase.split("[\\s\\-_]{1,}")) {
-			if (word.length() != 0) {
-				final Matcher m = firstWPat.matcher(word);
-				if (m.find())
-					sb.append(m.group().toUpperCase());
-				else
-					sb.append(word.substring(0, 1).toUpperCase());
+	public static String replyInitials(final String s) {
+		if (s != null) {
+			final StringBuilder sb = new StringBuilder();
+			final String inpStr = s.replaceAll("\\s", "");
+			for (int i = 0; i < inpStr.length(); ++i) {
+				final char c = inpStr.charAt(i);
+				if (Character.isUpperCase(c))
+					sb.append(c);
+				else if (!Character.isLowerCase(c))
+					return s;
 			}
+			if (sb.length() != 0)
+				return sb.toString();
 		}
-		if (sb.length() > 1)
-			return sb.toString();
-		else
-			return s.replace(" \t\r\n", "");
+		if (s != null && s.length() > 3) {
+			return s.substring(0, 1).toUpperCase();
+		}
+		return s;
 	}
-	
-	
-	
+		
 }
