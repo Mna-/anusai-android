@@ -33,6 +33,8 @@
     <string name="tagline" formatted="false">... Sent with [b][url=http://code.google.com/p/anusai-android/]%s[/url][/b]</string>
     <string name="compose">Compose</string>
     <string name="jumpToParent">Up one level</string>
+    <string name="clearComposedMessages">Erase all composed messages</string>
+    <string name="notifyNewUser">New user info received</string>
     
     
 </resources>

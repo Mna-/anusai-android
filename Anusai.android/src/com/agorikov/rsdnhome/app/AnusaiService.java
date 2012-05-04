@@ -1,6 +1,8 @@
 package com.agorikov.rsdnhome.app;
 
+import java.util.HashSet;
 import java.util.LinkedList;
+import java.util.Set;
 
 import android.app.AlarmManager;
 import android.app.Notification;
@@ -34,10 +36,11 @@ public class AnusaiService extends Service {
 	static final int NOTIFICATION_FOREGROUND_ID = 1;
 	public static final String NEW_DATA_RECEIVED = "New_Data_Received";
 	static final Handler handler = new Handler();
-	private AsyncTask<Void,Void,Void> asyncTask;
+	private volatile static AsyncTask<Void,Void,Void> asyncTask;
 	
 	private NotificationManager notifications;
 	
+	private final Property<Integer> newUserCount = new Property<Integer>(0);
 	private final Property<Integer> newMessageCount = new Property<Integer>(0);
 	
 	@Override
@@ -49,6 +52,7 @@ public class AnusaiService extends Service {
 		moveForeground();
 	}
 
+	private ChangeListener<Integer> newUserCountListener;
 	private ChangeListener<Integer> newMessageCountListener;
 	private Message lastReceivedMessage;
 	
@@ -62,6 +66,44 @@ public class AnusaiService extends Service {
 		notificationForeground.setLatestEventInfo(this, notificationTitle, ctx.getText(R.string.dataUpdate), pi);
 		notificationForeground.flags |= Notification.FLAG_ONGOING_EVENT;
 
+		setNewUserCountListener(pi, ctx, notificationTitle);
+		setNewMessageCountListener(pi, ctx, notificationTitle);
+		startForeground(NOTIFICATION_FOREGROUND_ID, notificationForeground);
+	}
+
+	private void setNewUserCountListener(final PendingIntent pi,
+			final Context ctx, final CharSequence notificationTitle) {
+		final CharSequence newMsgNotificationText = ctx.getText(R.string.notifyNewUser);
+		final Notification notificationUsers = new Notification(R.drawable.rsdn, 
+				newMsgNotificationText, System.currentTimeMillis());
+		notificationUsers.setLatestEventInfo(this, notificationTitle, newMsgNotificationText, pi);
+		notificationUsers.flags |= Notification.FLAG_AUTO_CANCEL | Notification.FLAG_SHOW_LIGHTS
+				| Notification.DEFAULT_VIBRATE | Notification.DEFAULT_SOUND;
+		
+		final int notifId = (int) 30984938;
+		
+		newUserCountListener = HandlerCompositeUtils.wrapPostponedListener(new ChangeListener<Integer>() {
+			@Override
+			public void onChange(Observable bean, Integer oldValue,
+				final Integer newValue) {
+				
+				notificationUsers.number = newValue;
+				notificationUsers.when = System.currentTimeMillis();
+				
+				{
+					notificationUsers.setLatestEventInfo(ctx, notificationTitle, 
+							newMsgNotificationText + 
+							(notificationUsers.number == 1 ? "" : " (" + notificationUsers.number + ")"),
+							 notificationUsers.contentIntent);
+					notifications.notify(notifId, notificationUsers); 
+				}
+			}
+		});
+		newUserCount.addChangeListener(newUserCountListener);
+	}
+
+	private void setNewMessageCountListener(final PendingIntent pi,
+			final Context ctx, final CharSequence notificationTitle) {
 		final CharSequence newMsgNotificationText = ctx.getText(R.string.notifyNewMessage);
 		final Notification notificationNewMessages = new Notification(R.drawable.rsdn, 
 				newMsgNotificationText, System.currentTimeMillis());
@@ -76,7 +118,7 @@ public class AnusaiService extends Service {
 			@Override
 			public void onChange(Observable bean, Integer oldValue,
 				final Integer newValue) {
-				if (newValue - lastReceivedBroadcastedCount >= 1000) {
+				if (newValue - lastReceivedBroadcastedCount >= 100) {
 					broadcastNewDataNotification();
 					lastReceivedBroadcastedCount = newValue;
 				}
@@ -108,7 +150,6 @@ public class AnusaiService extends Service {
 			}
 		});
 		newMessageCount.addChangeListener(newMessageCountListener);
-		startForeground(NOTIFICATION_FOREGROUND_ID, notificationForeground);
 	}
 	
 	@Override
@@ -140,16 +181,23 @@ public class AnusaiService extends Service {
 	}
 
 	private void startRefresh() {
-		if (asyncTask == null) {
-			asyncTask = new MessagesRefreshTask2().execute();
+		synchronized (AnusaiService.class) {
+			if (asyncTask == null) {
+				asyncTask = new MessagesRefreshTask2().execute();
+			}
 		}
 	}
 	
 	@Override
 	public void onDestroy() {
-		if (asyncTask != null) {
-			asyncTask.cancel(true);
-			asyncTask = null;
+		synchronized (AnusaiService.class) {
+			if (asyncTask != null) {
+				try {
+					asyncTask.cancel(true);
+				} finally {
+					asyncTask = null;
+				}
+			}
 		}
 		super.onDestroy();
 	}	
@@ -175,8 +223,6 @@ public class AnusaiService extends Service {
 		try {
 			final RSDNApplication app = RSDNApplication.getInstance();
 			final RsdnWebService ws = app.getWebService();
-			int numTries = 0;
-			while (numTries++ < 3) {
 				try {
 					postMessages(ws);
 					ws.getNewUsers.call(new EntityReceiver<UserEntity>() {
@@ -190,13 +236,18 @@ public class AnusaiService extends Service {
 						}
 						@Override
 						public void flush() {
-							app.getUsers().putAll(accUsers);
-							accUsers.clear();
+							final int size = accUsers.size();
+							if (size != 0) {
+								newUserCount.set(newUserCount.get() + size);
+								app.getUsers().putAll(accUsers);
+								accUsers.clear();
+							}
 						}
 					});
 					
 					final EntityReceiver<MessageEntity> messageRecv = new EntityReceiver<MessageEntity>() {
 						final LinkedList<Message> accMessages = new LinkedList<Message>();
+						final Set<Long> topicIds = new HashSet<Long>();
 						@Override
 						public boolean consume(final MessageEntity result) {
 							accMessages.add((Message) result);
@@ -209,7 +260,10 @@ public class AnusaiService extends Service {
 							final int size = accMessages.size();
 							if (size != 0) {
 								AnusaiService.this.lastReceivedMessage = accMessages.get(size - 1);
-								newMessageCount.set(newMessageCount.get() + size);
+								for (final Message msg : accMessages) {
+									topicIds.add(msg.getTopicId());
+								}
+								newMessageCount.set(topicIds.size());
 								app.getMessages().putAll(accMessages);
 								accMessages.clear();
 							}
@@ -217,23 +271,15 @@ public class AnusaiService extends Service {
 					};
 					ws.getNewData.call(messageRecv);
 					ws.getBrokenTopics.call(messageRecv);
-					postMessages(ws);
-					break;
 				} catch(final Exception e) {
 					Log.e(TAG, "Error inside of refreshMessages", e);
-					final String toastMsg = String.format("Try #%d  Error: %s", numTries, e.getLocalizedMessage());
+					final String toastMsg = String.format("Service Update Error: %s", e.getLocalizedMessage());
 					handler.post(new Runnable() {
 						@Override
 						public void run() {
 							Toast.makeText(getApplicationContext(), toastMsg, Toast.LENGTH_LONG).show();
 						}});
-					try {
-						Thread.sleep(20000);
-					} catch (Exception e1) {
-						break;
-					}
 				}
-			}
 		} finally {
 			RSDNApplication.getInstance().flushData();
 			handler.post(new Runnable() {
@@ -246,8 +292,11 @@ public class AnusaiService extends Service {
 	}
 
 	private void postMessages(final RsdnWebService ws) {
-		ws.postChange.call(null);
-		ws.postChangeCommit.call(null);
+		try {
+			ws.postChange.call(null);
+		} finally {
+			RSDNApplication.getInstance().flushData();
+		}
 	}
 
 	private void broadcastNewDataNotification() {

@@ -6,6 +6,9 @@ import android.app.Activity;
 import android.content.SharedPreferences;
 import android.content.SharedPreferences.Editor;
 import android.os.Bundle;
+import android.view.View;
+import android.view.View.OnClickListener;
+import android.widget.Button;
 import android.widget.CheckBox;
 import android.widget.CompoundButton;
 import android.widget.CompoundButton.OnCheckedChangeListener;
@@ -29,6 +32,13 @@ public class AboutActivity extends Activity {
 				editor.commit();
 				Log.enableFileLog(isChecked);
 			}});
+		final Button cleanComposedBn = (Button) findViewById(R.id.clearComposedMessagesBn);
+		cleanComposedBn.setOnClickListener(new OnClickListener() {
+			@Override
+			public void onClick(View v) {
+				RSDNApplication.getInstance().getComposedMessages().deleteAll();
+			}
+		});
 	}
 	
 	@Override

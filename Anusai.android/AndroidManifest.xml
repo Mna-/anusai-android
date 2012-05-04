@@ -33,6 +33,7 @@
         <activity android:name="AboutActivity" android:label="@string/about"></activity>
         <activity android:name="MessageComposeActivity" 
             android:configChanges="orientation|keyboardHidden"
+            android:screenOrientation="portrait"
             ></activity>
    </application>
 

@@ -30,5 +30,6 @@
     <string name="tagline" formatted="false">... Отправлено с помощью [b][url=http://code.google.com/p/anusai-android/]%s[/url][/b]</string>
     <string name="compose">Написать</string>
     <string name="jumpToParent">К родительскому</string>
+    <string name="notifyNewUser">Получена новая информация о пользователе</string>
    
 </resources>
