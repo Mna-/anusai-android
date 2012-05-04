@@ -19,6 +19,7 @@ public final class ComposedMessages extends EntityController<ComposedMessage> {
 	private final PreparedStatement _get;
 	private final PreparedStatement _putAll;
 	private final PreparedStatement _deleteByIds;
+	private final PreparedStatement _deleteAll;
 	private final Property<Boolean> busy = new Property<Boolean>(false);
 	
 	
@@ -30,6 +31,7 @@ public final class ComposedMessages extends EntityController<ComposedMessage> {
 
 		this._putAll = connection.prepareStatement("insert into composed_messages (parent_message_id, forum_id, subject, body) values(?,?,?,?)");
 		this._deleteByIds = connection.prepareStatement("delete from composed_messages where composed_message_id in (select id from TABLE(id long=?) t)");
+		this._deleteAll = connection.prepareStatement("delete from composed_messages");
 	}
 
 	@Override
@@ -121,9 +123,16 @@ public final class ComposedMessages extends EntityController<ComposedMessage> {
 				throw new RuntimeException(e);
 			}
 		}
-		
-		
 	}
 	
+	public void deleteAll() {
+		try {
+			final int rowsAffected = _deleteAll.executeUpdate();
+			Log.d(TAG, String.format("Delete all composed messages deleted %s records", rowsAffected));
+		} catch (SQLException e) {
+			Log.e(TAG, "Error in deleteAll", e);
+			throw new RuntimeException(e);
+		}
+	}
 	
 }

@@ -9,9 +9,9 @@ public class Strings {
 		return join(delimiter, Arrays.asList(items));
 	}
 	
-	public static String join(final String delimiter, final Collection<String> items) {
+	public static String join(final String delimiter, final Collection<?> items) {
 		final StringBuilder sb = new StringBuilder();
-		for (final String item : items) {
+		for (final Object item : items) {
 			if (sb.length() != 0) {
 				sb.append(delimiter);
 			}

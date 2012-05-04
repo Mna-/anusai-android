@@ -61,17 +61,21 @@ public final class RsdnWebService {
 	static final String TAG = "RsdnWebService";
 	static final String SOAP_ACTION_NS = "http://rsdn.ru/Janus/";
 	static final String WS_URL = "http://rsdn.ru/WS/JanusAT.asmx";
+	static final int maxOutput = 10;
 
 	private Credentials credentials;
 	private final ForumRowVersions messageRowVersion;
 	private final Transport transport;
 	private final ComposedMessages composedMessages;
 	
+	private static RsdnWebService self;
+	
 	public final SimpleWebMethod<ForumEntity> getForumList;
 	public final SimpleWebMethod<MessageEntity> getNewData;
 	public final SimpleWebMethod<MessageEntity> getBrokenTopics;
 	public final SimpleWebMethod<UserEntity> getNewUsers;
-	public final SimpleWebMethod<Entity> postChange, postChangeCommit;
+	public final SimpleWebMethod<Entity> postChange;
+	private final SimpleWebMethod<Entity> postChangeCommit;
 	private boolean forceFullHistory = false;
 	private final Map<String, ContentHandler> contentHandlers = new HashMap<String, ContentHandler>();
 
@@ -91,6 +95,10 @@ public final class RsdnWebService {
 	}
 	
 	public RsdnWebService(final String userAgent, final Connection connection) {
+		if (self != null)
+			throw new RuntimeException("Must not create second instance");
+		self = this;
+		
 		this.messageRowVersion = new ForumRowVersions(connection, RowVersion.Message);
 		try {
 			this.composedMessages = new ComposedMessages(connection);
@@ -100,7 +108,7 @@ public final class RsdnWebService {
 		}
 		this.transport = new HttpTransportSE(WS_URL) {
 			String cookie;
-			{ this.timeout = 60000; }
+			{ this.timeout = 3 * 60 * 000; }
 			
 			HttpURLConnection openConnection() throws IOException {
 				final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
@@ -340,7 +348,7 @@ public final class RsdnWebService {
 //						breakMsgIds_ = null;
 //					}
 					
-					changeRequest.addProperty("maxOutput", 0);
+					changeRequest.addProperty("maxOutput", maxOutput);
 					if (!call(changeRequest, ratingRowIds, messageRowIds, moderateRowIds)) {
 						lastRowVersionSkip.add(messageRowIds.getRaw());
 						if (!messageRowIds.incomplete())
@@ -395,31 +403,34 @@ public final class RsdnWebService {
 				final Iterable<ComposedMessage> writtenMsgs = composedMessages.getAll();
 				if (!writtenMsgs.iterator().hasNext())
 					return;
-				
-				final SoapObject postRequest = new SoapObject("", "postRequest");
-				putCredentials(postRequest);
-				
-				final SoapObject writtenMessages = new SoapObject("", "writedMessages");
-				postRequest.addSoapObject(writtenMessages);
-				
 				final List<Long> sentIds = new LinkedList<Long>();
-				for (final ComposedMessage msg : writtenMsgs) {
-					final SoapObject postMessageInfo = new SoapObject("", "PostMessageInfo");
-					writtenMessages.addSoapObject(postMessageInfo);
+				
+				try {
+					for (final ComposedMessage msg : writtenMsgs) {
+						final SoapObject postRequest = new SoapObject("", "postRequest");
+						putCredentials(postRequest);
+						
+						final SoapObject writtenMessages = new SoapObject("", "writedMessages");
+						postRequest.addSoapObject(writtenMessages);
+				
+						final SoapObject postMessageInfo = new SoapObject("", "PostMessageInfo");
+						writtenMessages.addSoapObject(postMessageInfo);
 
-					final long localMessageId = msg.getId();
-					sentIds.add(localMessageId);
-					postMessageInfo.addProperty("localMessageId", localMessageId);
-					postMessageInfo.addProperty("parentId", msg.getParentId() != null ? msg.getParentId() : 0);
-					postMessageInfo.addProperty("forumId", msg.getForumId());
-					postMessageInfo.addProperty("subject", msg.getSubj());
-					postMessageInfo.addProperty("message", msg.getBody());
+						final long localMessageId = msg.getId();
+						postMessageInfo.addProperty("localMessageId", localMessageId);
+						postMessageInfo.addProperty("parentId", msg.getParentId() != null ? msg.getParentId() : 0);
+						postMessageInfo.addProperty("forumId", msg.getForumId());
+						postMessageInfo.addProperty("subject", msg.getSubj());
+						postMessageInfo.addProperty("message", msg.getBody());
+						call(postRequest);
+						sentIds.add(localMessageId);
+						postChangeCommit.call(recv);
+					}
+				} finally {
+					// always cleanup
+					Log.d(TAG, "Will delete (" + Strings.join(", ", sentIds) + ")");
+					composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
 				}
-				
-				call(postRequest);
-				
-				// cleanup if no exception thrown
-				composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
 			}
 		};
 		//-----------------------------------------------------------
@@ -512,7 +523,7 @@ public final class RsdnWebService {
 				while (true) {
 					final SoapObject userRequest = new SoapObject("", "userRequest");
 					putCredentials(userRequest);
-					userRequest.addProperty("maxOutput", 0);
+					userRequest.addProperty("maxOutput", maxOutput);
 					if (!call(userRequest, RowVersion.Users))
 						break;
 				}
