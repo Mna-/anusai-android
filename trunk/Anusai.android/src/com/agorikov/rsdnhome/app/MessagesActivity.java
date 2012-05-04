@@ -322,7 +322,7 @@ public final class MessagesActivity extends Activity {
 		return true;
 	}
 	
-	final BroadcastReceiver receiver = new BroadcastReceiver() {
+	private final BroadcastReceiver receiver = new BroadcastReceiver() {
 		@Override
 		public void onReceive(Context context, Intent intent) {
 			refreshView();

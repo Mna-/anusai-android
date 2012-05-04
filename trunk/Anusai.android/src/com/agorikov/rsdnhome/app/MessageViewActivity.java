@@ -4,8 +4,10 @@ import java.text.DateFormat;
 import java.util.ArrayList;
 
 import android.app.Activity;
+import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.IntentFilter;
 import android.graphics.Typeface;
 import android.os.Bundle;
 import android.text.SpannableStringBuilder;
@@ -38,6 +40,16 @@ public class MessageViewActivity extends Activity {
 	static final int COMPOSE_MESSAGE = 0;
 
 	private long messageId;
+	private Runnable updateChildMessagesRunnable;
+	private boolean paused;
+	private boolean pendingRefresh;
+	private final BroadcastReceiver receiver = new BroadcastReceiver() {
+		@Override
+		public void onReceive(Context context, Intent intent) {
+			refreshView();
+		}
+	};
+
 
 	private static class MenuItemIds {
 		final static int postReply = Menu.FIRST;
@@ -55,8 +67,15 @@ public class MessageViewActivity extends Activity {
 		super.onCreate(savedInstanceState);
 		if (message != null)
 			fillMessageView(message);
+		registerReceiver(receiver, new IntentFilter(AnusaiService.NEW_DATA_RECEIVED));
 	}
 
+	@Override
+	protected void onDestroy() {
+		unregisterReceiver(receiver);
+		super.onDestroy();
+	}
+	
 	private void fillMessageView(final Message message) {
 		final Context ctx = getApplicationContext();
 		final DateFormat dtFormatter = android.text.format.DateFormat.getDateFormat(ctx);
@@ -107,6 +126,20 @@ public class MessageViewActivity extends Activity {
 		messageView.setText(MessageViewFormatter.format(message.getBody(), messageView));
 		childMessages.addHeaderView(messageBody, null, false);
 	
+		this.updateChildMessagesRunnable = new Runnable() {
+			@Override
+			public void run() {
+				updateChildMessages(ctx, dtFormatter, tmFormatter, childMessages,
+						inflater, messageBody);
+			}
+		};
+		refreshView();
+	}
+
+	private void updateChildMessages(final Context ctx,
+			final DateFormat dtFormatter, final DateFormat tmFormatter,
+			final ListView childMessages, final LayoutInflater inflater,
+			final View messageBody) {
 		final Messages messages = RSDNApplication.getInstance().getMessages();
 		final ArrayList<Long> childMsgIds = Converters.<Long>asArrayList(messages
 				.getFromParent(messageId));
@@ -192,6 +225,31 @@ public class MessageViewActivity extends Activity {
 	}
 	
 	@Override
+	protected void onResume() {
+		super.onResume();
+		this.paused = false;
+		if (pendingRefresh)
+			refreshView();
+	}
+	
+	@Override
+	protected void onPause() {
+		this.paused = true;
+		super.onPause();
+	}
+	
+	private void refreshView() {
+		if (paused) {
+			pendingRefresh = true;
+			return;
+		}
+		pendingRefresh = false;
+
+		if (updateChildMessagesRunnable != null)
+			updateChildMessagesRunnable.run();
+	}
+	
+	@Override
 	protected void onActivityResult(int requestCode, int resultCode, Intent data) {
 		if (requestCode == COMPOSE_MESSAGE) {
 			if (resultCode == RESULT_OK) {
@@ -205,4 +263,5 @@ public class MessageViewActivity extends Activity {
 			super.onActivityResult(requestCode, resultCode, data);
 		}
 	}
+	
 }
