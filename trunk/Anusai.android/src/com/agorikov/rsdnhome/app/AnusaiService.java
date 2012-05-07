@@ -168,7 +168,8 @@ public class AnusaiService extends Service {
 				final PendingIntent alarmIntent = PendingIntent.getBroadcast(ctx, 0, intent, 0);
 
 				boolean autoUpdate = true;
-				if (autoUpdate) {
+				if (autoUpdate && 
+						RSDNApplication.getInstance().badCredentialsProperty().get() == false) {
 					final long interval = 5 * 60 * 1000;
 					final long timeToRefresh = SystemClock.elapsedRealtime();
 					alarms.setRepeating(AlarmManager.ELAPSED_REALTIME, timeToRefresh, interval, alarmIntent);
@@ -190,14 +191,13 @@ public class AnusaiService extends Service {
 	
 	@Override
 	public void onDestroy() {
+		final AsyncTask<Void, Void, Void> prevTask;
 		synchronized (AnusaiService.class) {
-			if (asyncTask != null) {
-				try {
-					asyncTask.cancel(true);
-				} finally {
-					asyncTask = null;
-				}
-			}
+			prevTask = asyncTask;
+			asyncTask = null;
+		}
+		if (prevTask != null) {
+			prevTask.cancel(false);
 		}
 		super.onDestroy();
 	}	
@@ -273,11 +273,16 @@ public class AnusaiService extends Service {
 					ws.getBrokenTopics.call(messageRecv);
 				} catch(final Exception e) {
 					Log.e(TAG, "Error inside of refreshMessages", e);
-					final String toastMsg = String.format("Service Update Error: %s", e.getLocalizedMessage());
+					final String msg = e.getLocalizedMessage();
 					handler.post(new Runnable() {
 						@Override
 						public void run() {
-							Toast.makeText(getApplicationContext(), toastMsg, Toast.LENGTH_LONG).show();
+							if (msg.contains("Error login"))
+								RSDNApplication.getInstance().badCredentialsProperty().set(true);
+							else {
+								final String toastMsg = String.format("Service Update Error: %s", msg);
+								Toast.makeText(getApplicationContext(), toastMsg, Toast.LENGTH_LONG).show();
+							}
 						}});
 				}
 		} finally {

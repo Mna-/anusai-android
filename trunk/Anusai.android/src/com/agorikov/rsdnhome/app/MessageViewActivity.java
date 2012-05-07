@@ -3,7 +3,6 @@ package com.agorikov.rsdnhome.app;
 import java.text.DateFormat;
 import java.util.ArrayList;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -35,7 +34,7 @@ import com.agorikov.rsdnhome.common.util.Log;
 import com.agorikov.rsdnhome.model.Message;
 import com.agorikov.rsdnhome.model.Messages;
 
-public class MessageViewActivity extends Activity {
+public class MessageViewActivity extends BaseAnusaiActivity {
 	static final String TAG = "MessageViewActivity";
 	static final int COMPOSE_MESSAGE = 0;
 

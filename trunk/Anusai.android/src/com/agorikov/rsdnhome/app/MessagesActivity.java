@@ -35,13 +35,14 @@ import android.widget.TwoLineListItem;
 import com.agorikov.rsdnhome.beans.ChangeListener;
 import com.agorikov.rsdnhome.beans.Observable;
 import com.agorikov.rsdnhome.common.Converters;
+import com.agorikov.rsdnhome.common.HandlerCompositeUtils;
 import com.agorikov.rsdnhome.common.MessageViewFormatter;
 import com.agorikov.rsdnhome.model.Forum;
 import com.agorikov.rsdnhome.model.Message;
 import com.agorikov.rsdnhome.model.Topic;
 import com.agorikov.rsdnhome.model.Topics;
 
-public final class MessagesActivity extends Activity {
+public final class MessagesActivity extends BaseAnusaiActivity {
 	static final String TAG = "MessagesActivity";
 	static final int PICK_FORUM = 0;
 	static final int SHOW_MESSAGE = 1;
@@ -50,6 +51,8 @@ public final class MessagesActivity extends Activity {
 	private AsyncTask<Void,Void,Void> messagesRefreshTask;
 	
 	private long forumId;
+	
+	private boolean autoCredentialsLaunch = true;
 	
 	private static class MenuItemIds {
 		final static int refreshData = Menu.FIRST;
@@ -117,6 +120,9 @@ public final class MessagesActivity extends Activity {
 		busyListener.onChange(null, null, topics.busyProperty().get());
 		setForumId(forumId);
 		registerReceiver(receiver, new IntentFilter(AnusaiService.NEW_DATA_RECEIVED));
+		app.credentialsViewEntryPoint().
+			addChangeListener(credentialsViewEntryPointListener);
+		app.badCredentialsProperty().addChangeListener(badCredentialsListener);
 	}
 
 	@Override
@@ -136,6 +142,26 @@ public final class MessagesActivity extends Activity {
 				}});
 		}};
 
+		private final ChangeListener<Boolean> credentialsViewEntryPointListener = HandlerCompositeUtils.wrapPostponedListener(new ChangeListener<Boolean>() {
+			@Override
+			public void onChange(Observable bean, Boolean oldValue,
+					Boolean newValue) {
+				if (newValue && autoCredentialsLaunch) {
+					autoCredentialsLaunch = false;
+					launchCredentials();
+				}
+			}});
+		
+	private final ChangeListener<Boolean> badCredentialsListener = new ChangeListener<Boolean>() {
+		@Override
+		public void onChange(Observable bean, Boolean oldValue, Boolean newValue) {
+			if (newValue == false)
+				autoCredentialsLaunch = true;
+		}
+	};
+
+		
+		
 	protected void activateMessage(final long msgId) {
 		Log.d(TAG, String.format("Clicked msg #%d", msgId));
 		final Intent i = new Intent(MessagesActivity.this, MessageViewActivity.class);

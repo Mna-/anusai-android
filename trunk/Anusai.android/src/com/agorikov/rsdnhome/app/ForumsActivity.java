@@ -5,12 +5,10 @@ import java.util.Collections;
 import java.util.LinkedList;
 import java.util.List;
 
-import android.app.Activity;
 import android.content.Intent;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Handler;
-import com.agorikov.rsdnhome.common.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -21,16 +19,16 @@ import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 
-import com.agorikov.rsdnhome.app.R;
 import com.agorikov.rsdnhome.beans.ChangeListener;
 import com.agorikov.rsdnhome.beans.Observable;
+import com.agorikov.rsdnhome.common.util.Log;
 import com.agorikov.rsdnhome.model.Forum;
 import com.agorikov.rsdnhome.model.ForumEntity;
 import com.agorikov.rsdnhome.model.ForumGroup;
 import com.agorikov.rsdnhome.model.ForumGroups;
 import com.agorikov.rsdnhome.webclient.model.SimpleWebMethod.EntityReceiver;
 
-public final class ForumsActivity extends Activity {
+public final class ForumsActivity extends BaseAnusaiActivity {
     public static final String TAG = "ForumsActivity";
     AsyncTask<Void, Void, Void> forumsRefreshTask;
     static final Handler handler = new Handler();

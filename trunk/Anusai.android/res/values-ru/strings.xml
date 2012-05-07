@@ -31,5 +31,6 @@
     <string name="compose">Написать</string>
     <string name="jumpToParent">К родительскому</string>
     <string name="notifyNewUser">Получена новая информация о пользователе</string>
+    <string name="authenticationFailure">Сервер RSDN не принял ваши идентификационные данные. Введите валидный логин и пароль.</string>
    
 </resources>
