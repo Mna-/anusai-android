@@ -20,6 +20,7 @@ import java.util.zip.GZIPInputStream;
 
 import org.ksoap2.HeaderProperty;
 import org.ksoap2.SoapEnvelope;
+import org.ksoap2.SoapFault;
 import org.ksoap2.serialization.SoapObject;
 import org.ksoap2.serialization.SoapSerializationEnvelope;
 import org.ksoap2.transport.HttpTransportSE;
@@ -62,6 +63,10 @@ public final class RsdnWebService {
 	static final String SOAP_ACTION_NS = "http://rsdn.ru/Janus/";
 	static final String WS_URL = "http://rsdn.ru/WS/JanusAT.asmx";
 	static final int maxOutput = 10;
+	
+	static final int ConnectTimeout = 10000;
+	static final int ReadTimeout = 20000;
+	
 
 	private Credentials credentials;
 	private final ForumRowVersions messageRowVersion;
@@ -108,13 +113,14 @@ public final class RsdnWebService {
 		}
 		this.transport = new HttpTransportSE(WS_URL) {
 			String cookie;
-			{ this.timeout = 3 * 60 * 000; }
+			{
+			}
 			
 			HttpURLConnection openConnection() throws IOException {
 				final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
 				
-				connection.setReadTimeout(timeout);
-				connection.setConnectTimeout(timeout);
+				connection.setConnectTimeout(ConnectTimeout);
+				connection.setReadTimeout(ReadTimeout);
 				connection.setDoOutput(true);
 				connection.setDoInput(true);
 				
@@ -124,7 +130,12 @@ public final class RsdnWebService {
 		    @SuppressWarnings("rawtypes")
 			public List call(String soapAction, final SoapEnvelope envelope, final List headers) 
 		    		throws IOException, XmlPullParserException {
+		    	
+		    	HttpURLConnection connection = null;
+		    	OutputStream os = null;
+	    	    InputStream is = null;
 
+		    	try {
 		    		if (soapAction == null)
 		    			soapAction = "\"\"";
 
@@ -142,7 +153,7 @@ public final class RsdnWebService {
 		    		requestDump = debug ? new String(requestData) : null;
 		    	    responseDump = null;
 		    	    
-		    	    final HttpURLConnection connection = openConnection();
+		    	    connection = openConnection();
 		    	    
 		    	    connection.setRequestProperty("User-Agent", userAgent);
 		    	    // SOAPAction is not a valid header for VER12 so do not add
@@ -177,29 +188,27 @@ public final class RsdnWebService {
 		    	    connection.connect();
 		        
 
-		    	    OutputStream os = connection.getOutputStream();
+		    	    os = connection.getOutputStream();
 		       
 		    	    os.write(requestData, 0, requestData.length);
 		    	    os.flush();
 		    	    os.close();
+		    	    os = null;
 		    	    requestData = null;
-		    	    InputStream is;
 		    	    Map<String, List<String>> retHeaders = null;
 		    	    
 		    	    try {
-		    	    	connection.connect();
-		    	    	is = connection.getInputStream();
-		    		    retHeaders = connection.getHeaderFields();
-		    		    if (Arrays.asList("gzip").equals(retHeaders.get("Content-Encoding"))) {
-		    		    	is = new GZIPInputStream(is, 256 * 1024);
-		    		    }
+		    	    	is = wrapInputStream(connection, connection.getInputStream());
 		    	    } catch (IOException e) {
-		    	    	is = connection.getErrorStream();
+		    	    	is = wrapInputStream(connection, connection.getErrorStream());
 
 		    	    	if (is == null) {
-		    	    		connection.disconnect();
 		    	    		throw (e);
 		    	    	}
+		    	    	
+		    	    	parseResponse(envelope, is);
+		    	    	final SoapFault fault = (SoapFault) envelope.bodyIn;
+		    	    	throw fault;
 		    	    }
 		    	    final List<String> cookieList = retHeaders != null ? retHeaders.get("Set-Cookie") : null;
 		    	    if (cookieList != null) {
@@ -212,13 +221,19 @@ public final class RsdnWebService {
 						RsdnWebService.this.readResponse(soapActionChunks[soapActionChunks.length - 1], is);
 		    	    } catch (SAXException e) {
 		    	    	throw new IOException(e);
-					} finally {
-		    	    	is.close();
-		    	    	connection.disconnect();
-		    	    }
+					}
 		    	    
-		    	    return null;
-		    	}
+			    } finally {
+			    	if (os != null)
+			    	    os.close();
+			    	if (is != null)
+			    		is.close();
+			    	if (connection != null)
+			    		connection.disconnect();
+			    }
+	    	    
+	    	    return null;
+	    	}
 		};
 		this.transport.debug = false; // true;
 		//-----------------------------------------------------------
@@ -667,6 +682,17 @@ public final class RsdnWebService {
 		//reader.parse(new InputSource(cacheToTemporary(is)));
 	}
 
+	
+	private static InputStream wrapInputStream(final HttpURLConnection connection, final InputStream is) throws IOException {
+		if (is == null) return is;
+		final Map<String, List<String>> retHeaders = connection.getHeaderFields();
+	    if (Arrays.asList("gzip").equals(retHeaders.get("Content-Encoding"))) {
+	    	return new GZIPInputStream(is, 256 * 1024);
+	    }
+	    return is;
+	}
+
+	
 //	private static final String tempFileName = DataModel.getStorageDirectory() + File.separator + "rsdn.home.log";
 //	
 //	protected InputStream cacheToTemporary(final InputStream is) throws IOException {
