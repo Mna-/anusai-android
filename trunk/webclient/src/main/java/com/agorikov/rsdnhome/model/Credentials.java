@@ -1,6 +1,7 @@
 package com.agorikov.rsdnhome.model;
 
 import com.agorikov.rsdnhome.common.Builder;
+import com.agorikov.rsdnhome.common.Converters;
 
 public final class Credentials {
 
@@ -8,8 +9,8 @@ public final class Credentials {
 	private final String password;
 	
 	private Credentials(final String userName, String password) {
-		this.userName = userName;
-		this.password = password;
+		this.userName = Converters.nonNullStr(userName);
+		this.password = Converters.nonNullStr(password);
 	}
 	
 	public String getUserName() {
