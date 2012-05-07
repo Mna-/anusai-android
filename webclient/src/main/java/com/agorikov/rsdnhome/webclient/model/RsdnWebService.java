@@ -64,10 +64,6 @@ public final class RsdnWebService {
 	static final String WS_URL = "http://rsdn.ru/WS/JanusAT.asmx";
 	static final int maxOutput = 10;
 	
-	static final int ConnectTimeout = 10000;
-	static final int ReadTimeout = 20000;
-	
-
 	private Credentials credentials;
 	private final ForumRowVersions messageRowVersion;
 	private final Transport transport;
@@ -119,8 +115,8 @@ public final class RsdnWebService {
 			HttpURLConnection openConnection() throws IOException {
 				final HttpURLConnection connection = (HttpURLConnection) new URL(url).openConnection();
 				
-				connection.setConnectTimeout(ConnectTimeout);
-				connection.setReadTimeout(ReadTimeout);
+				connection.setConnectTimeout(timeout);
+				connection.setReadTimeout(timeout);
 				connection.setDoOutput(true);
 				connection.setDoInput(true);
 				
@@ -199,6 +195,7 @@ public final class RsdnWebService {
 		    	    
 		    	    try {
 		    	    	is = wrapInputStream(connection, connection.getInputStream());
+		    	    	retHeaders = connection.getHeaderFields();
 		    	    } catch (IOException e) {
 		    	    	is = wrapInputStream(connection, connection.getErrorStream());
 
@@ -418,7 +415,7 @@ public final class RsdnWebService {
 				final Iterable<ComposedMessage> writtenMsgs = composedMessages.getAll();
 				if (!writtenMsgs.iterator().hasNext())
 					return;
-				final List<Long> sentIds = new LinkedList<Long>();
+				//final List<Long> sentIds = new LinkedList<Long>();
 				
 				try {
 					for (final ComposedMessage msg : writtenMsgs) {
@@ -438,13 +435,13 @@ public final class RsdnWebService {
 						postMessageInfo.addProperty("subject", msg.getSubj());
 						postMessageInfo.addProperty("message", msg.getBody());
 						call(postRequest);
-						sentIds.add(localMessageId);
+						//sentIds.add(localMessageId);
 						postChangeCommit.call(recv);
 					}
 				} finally {
 					// always cleanup
-					Log.d(TAG, "Will delete (" + Strings.join(", ", sentIds) + ")");
-					composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
+					//Log.d(TAG, "Will delete (" + Strings.join(", ", sentIds) + ")");
+					//composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
 				}
 			}
 		};
@@ -455,7 +452,6 @@ public final class RsdnWebService {
 			final List<Long> sentIds = new ArrayList<Long>();
 			String exceptionString;
 			String exceptionInfo;
-			@SuppressWarnings("unused")
 			long localMsgId;
 			
 			@Override
@@ -493,14 +489,14 @@ public final class RsdnWebService {
 				@Override
 				public void run() {
 					// It should be already deleted right after successful send
-					//composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
-					//sentIds.clear();
+					composedMessages.deleteByIds(sentIds.toArray(new Long[sentIds.size()]));
+					sentIds.clear();
 					mode = 0;
 				}};
 				final Runnable notifyError = new Runnable() {
 				@Override
 				public void run() {
-					//composedMessages.deleteByIds(localMsgId);
+					composedMessages.deleteByIds(localMsgId);
 					Log.e(TAG, Converters.nonNullStr(exceptionString) + " : " + Converters.nonNullStr(exceptionInfo));
 					exceptionString = null;
 					exceptionInfo = null;
