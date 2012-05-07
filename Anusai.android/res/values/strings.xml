@@ -35,6 +35,7 @@
     <string name="jumpToParent">Up one level</string>
     <string name="clearComposedMessages">Erase all composed messages</string>
     <string name="notifyNewUser">New user info received</string>
+    <string name="authenticationFailure">Authentication failed. Please enter valid RSDN login and password.</string>
     
     
 </resources>

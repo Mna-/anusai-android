@@ -11,8 +11,15 @@ import android.content.IntentFilter;
 import android.content.SharedPreferences;
 import android.os.Handler;
 
+import com.agorikov.rsdnhome.beans.Binding;
+import com.agorikov.rsdnhome.beans.ChangeListener;
+import com.agorikov.rsdnhome.beans.Observable;
+import com.agorikov.rsdnhome.beans.ObservableValue;
+import com.agorikov.rsdnhome.beans.Property;
+import com.agorikov.rsdnhome.common.HandlerCompositeUtils;
 import com.agorikov.rsdnhome.common.util.Log;
 import com.agorikov.rsdnhome.model.ComposedMessages;
+import com.agorikov.rsdnhome.model.Credentials;
 import com.agorikov.rsdnhome.model.Credentials.CredentialsBuilder;
 import com.agorikov.rsdnhome.model.ForumGroups;
 import com.agorikov.rsdnhome.model.Forums;
@@ -38,6 +45,11 @@ public final class RSDNApplication extends Application {
 	private final Preferences preferences;
 	private final Topics topics;
 	private final ComposedMessages composedMessages;
+	
+	private final Property<Boolean> badCredentials = new Property<Boolean>(false);
+	private final Property<Integer> activeViewCount = new Property<Integer>(0);
+	private final ChangeListener<Boolean> badCredentialsListener;
+	private final Binding<Boolean>	credentialsViewEntryPoint;
 
 	private void registerULog() {
 		final Log.UtilLog uLog = new Log.UtilLog() {
@@ -79,7 +91,19 @@ public final class RSDNApplication extends Application {
 		} catch (SQLException e) {
 			throw new RuntimeException("Error in DB access in application initialization", e);
 		}
+		badCredentialsListener = HandlerCompositeUtils.wrapPostponedListener(new ChangeListener<Boolean>() {
+			@Override
+			public void onChange(Observable bean, final Boolean oldValue, final Boolean newValue) {
+				AnusaiService.updateAlarms();
+			}});
+		badCredentials.addChangeListener(badCredentialsListener);
 		
+		credentialsViewEntryPoint = new Binding<Boolean>() {
+			{ bind(badCredentials, activeViewCount); }
+			@Override
+			protected Boolean calculate() {
+				return badCredentials.get() && 0 < activeViewCount.get();
+			}};
 	}
 	
 	private void readCredentials() {
@@ -89,7 +113,9 @@ public final class RSDNApplication extends Application {
 		credentialsBuilder.userName(pref.getString("userName", ""));
 		credentialsBuilder.password(pref.getString("password", ""));
 		
-		ws.setCredentials(credentialsBuilder.build());
+		final Credentials credentials = credentialsBuilder.build();
+		ws.setCredentials(credentials);
+		badCredentials.set(false);
 	}
 
 	final BroadcastReceiver credentialsReceiver = new BroadcastReceiver() {
@@ -156,4 +182,16 @@ public final class RSDNApplication extends Application {
 		dataModel.flush();
 	}
 
+	public Property<Boolean> badCredentialsProperty() {
+		return badCredentials;
+	}
+
+	public Property<Integer> activeViewCountProperty() {
+		return activeViewCount;
+	}
+	
+	public ObservableValue<Boolean> credentialsViewEntryPoint() {
+		return credentialsViewEntryPoint;
+	}
+	
 }
