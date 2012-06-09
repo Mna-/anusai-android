@@ -23,6 +23,7 @@ import com.agorikov.rsdnhome.beans.Property;
 import com.agorikov.rsdnhome.common.HandlerCompositeUtils;
 import com.agorikov.rsdnhome.common.MessageViewFormatter;
 import com.agorikov.rsdnhome.common.util.Log;
+import com.agorikov.rsdnhome.model.ComposedMessage;
 import com.agorikov.rsdnhome.model.Message;
 import com.agorikov.rsdnhome.model.MessageEntity;
 import com.agorikov.rsdnhome.model.User;
@@ -286,7 +287,6 @@ public class AnusaiService extends Service {
 						}});
 				}
 		} finally {
-			RSDNApplication.getInstance().flushData();
 			handler.post(new Runnable() {
 				@Override
 				public void run() {
@@ -297,6 +297,9 @@ public class AnusaiService extends Service {
 	}
 
 	private void postMessages(final RsdnWebService ws) {
+		final Iterable<ComposedMessage> writtenMsgs = RSDNApplication.getInstance().getComposedMessages().getAll();
+		if (!writtenMsgs.iterator().hasNext())
+			return;
 		try {
 			ws.postChange.call(null);
 		} finally {
