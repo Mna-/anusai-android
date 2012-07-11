@@ -180,7 +180,7 @@ public class MessageComposeActivity extends Activity {
 		final Long userId = message.getUserId();
 		final User user = app.getUsers().get(userId != null ? userId : -1);
 		final String userName = user != null ? user.getName() : String.valueOf(userId);
-		final String initials = Strings.replyInitials(Converters.nonNullStr(userName));
+		final String initials = Strings.replyInitialsJanus(Converters.nonNullStr(userName));
 		
 		answerMarkup.append(String.format(getResources().getString(R.string.youWrote), userName));
 		answerMarkup.append("\r\n\r\n");
